@@ -116,9 +116,12 @@ impl Process {
     }
 
     pub async fn user(&self) -> ProcessResult<User> {
-        // Fetch user infomation with `darwin_libproc` help,
-        // construct user from this information somehow.
-        unimplemented!("https://github.com/heim-rs/heim/issues/194")
+        let uid = match bindings::process(self.pid) {
+            Ok(kinfo_proc) => kinfo_proc.kp_eproc.e_ucred.cr_uid,
+            Err(e) => return Err(e),
+        };
+        let u = User::try_from(uid)?;
+        Ok(u)
     }
 
     pub async fn is_running(&self) -> ProcessResult<bool> {

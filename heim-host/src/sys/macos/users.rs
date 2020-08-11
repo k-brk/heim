@@ -1,11 +1,11 @@
-use std::ffi::CStr;
+use std::{convert::TryFrom, ffi::CStr};
 
 use heim_common::prelude::*;
-use heim_common::Pid;
+use heim_common::{Pid, Result, Error, Uid};
 
 use super::super::unix::get_users;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct User {
     username: String,
     terminal: String,
@@ -76,4 +76,34 @@ pub fn users() -> impl Stream<Item = Result<User>> {
         Ok(stream::iter(users).map(Ok))
     })
     .try_flatten_stream()
+}
+
+impl From<*mut libc::passwd> for User {
+    fn from(entry: *mut libc::passwd) -> Self {
+        let username = unsafe {
+            CStr::from_ptr((*entry).pw_name)
+                .to_string_lossy()
+                .into_owned()
+        };
+
+        User {
+            username,
+            id: "".to_string(),
+            terminal: "".to_string(),
+            hostname: "".to_string(),
+            pid: 0,
+        }
+    }
+}
+
+impl TryFrom<Uid> for User {
+    type Error = Error;
+    fn try_from(uid: Uid) -> Result<Self> {
+        let passwd = unsafe { libc::getpwuid(uid)};
+        if passwd.is_null() {
+            return Err(Error::last_os_error().with_ffi("getpwuid"));
+        }
+        let user = User::from(passwd);
+        Ok(user)
+    }
 }

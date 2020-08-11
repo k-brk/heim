@@ -40,6 +40,10 @@ pub use self::errors::{Context, Error, Result};
 #[cfg(unix)]
 pub type Pid = libc::pid_t;
 
+/// User identifier type
+#[cfg(unix)]
+pub type Uid = libc::uid_t;
+
 /// Process identifier type.
 // TODO: Is it a correct type for pid?
 #[cfg(target_os = "windows")]

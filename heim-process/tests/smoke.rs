@@ -67,6 +67,11 @@ async fn smoke_processes() {
         try_method!(process.memory());
         try_method!(process.is_running());
 
+        #[cfg(target_os = "macos")] // Not implemented yet
+        try_method!(process.user());
+
+        println!("{:?}", process.user().await);
+
         #[cfg(target_os = "linux")]
         {
             use heim_process::os::linux::ProcessExt;
